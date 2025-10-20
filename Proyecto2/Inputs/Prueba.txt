@@ -1,0 +1,32 @@
+entero edad con valor 30 + 20 ;
+double Salario con valor 10.5 ;
+cadena saludo con valor "Jefferson";
+imprimir edad + 10.5;
+imprimir "edad" - 10;
+imprimir "hola" == "mundo";
+imprimir !("hola" == "hola" && "hola" == "mundo");
+si ( edad > 18 ) { 
+    imprimir "es mayor de edad";
+    imprimir "hola " + saludo;
+    edad = 10;
+}
+imprimir "\tNueva edad:\n" + edad + "\nAdiós";
+
+entero x con valor 10;
+imprimir x;
+imprimir 10 > 5;
+imprimir x > 10;
+
+entero resultado con valor 0 ;
+funcion entero suma ( ) {
+    resultado = 30 + 20 ;
+    retornar resultado ;
+}
+
+resultado = ejecutar suma() ;
+
+imprimir "Resultado: " + resultado;
+
+entero i con valor 0 ;
+i ++
+imprimir i;
