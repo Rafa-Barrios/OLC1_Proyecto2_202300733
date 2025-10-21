@@ -15,6 +15,7 @@ DOUBLE      [0-9]+\.[0-9]+\b
 CONTENT     ([^\n\"\\]|\\.)
 ID          [a-zA-Z_][a-zA-Z0-9_]*
 STRING      \"({CONTENT}*)\"
+CHAR        \'([^\'\\]|\\.)\'
 
 %%
 
@@ -24,7 +25,11 @@ STRING      \"({CONTENT}*)\"
 // Reservadas
 "entero"                { return 'TK_entero'  }
 "double"                { return 'TK_double'  }
+"boolean"               { return 'TK_boolean' }
+"true"                  { return 'TK_true' }
+"false"                 { return 'TK_false' }
 "cadena"                { return 'TK_cadena'  }
+"caracter"              { return 'TK_caracter' }
 "con"                   { return 'TK_con'     }
 "valor"                 { return 'TK_valor'   }
 "imprimir"              { return 'TK_imprimir'}
@@ -34,9 +39,13 @@ STRING      \"({CONTENT}*)\"
 "funcion"               { return 'TK_funcion'}
 "retornar"               { return 'TK_retornar'}
 "ejecutar"               { return 'TK_ejecutar'}
+// Comentarios
+"//".*                                 {/* Ignorar comentario de una línea */}
+"/*"([^*]|\*+[^*/])*\*+"/"             {/* Ignorar comentario multilínea */}
 // Valores
 {ID}                    { return 'TK_id'     }
 {STRING}                { yytext = yytext.slice(1, yyleng - 1); return 'TK_string' }
+{CHAR}                  { yytext = yytext.slice(1, yyleng - 1); return 'TK_char'; }
 {DOUBLE}                { return 'TK_decimal' }
 {INTEGER}               { return 'TK_int'    }
 // Símbolos
@@ -146,6 +155,9 @@ EXPRESION :
             TK_int     {$$ = new Primitivo(@1.first_line, @1.first_column, $1, Tipo.ENTERO)} |
             TK_decimal {$$ = new Primitivo(@1.first_line, @1.first_column, $1, Tipo.DOUBLE)} |
             TK_string  {$$ = new Primitivo(@1.first_line, @1.first_column, $1, Tipo.CADENA)} |
+            TK_char    {$$ = new Primitivo(@1.first_line, @1.first_column, $1, Tipo.CARACTER)} |
+            TK_true  {$$ = new Primitivo(@1.first_line, @1.first_column, true, Tipo.BOOLEANO)} |
+            TK_false {$$ = new Primitivo(@1.first_line, @1.first_column, false, Tipo.BOOLEANO)} |
             TK_parAbre EXPRESION TK_parCierra {$$ = $2} ;
 
 ARITMETICOS : 
@@ -179,4 +191,6 @@ LLAMADA_FUNCION : TK_ejecutar TK_id TK_parAbre TK_parCierra {$$ = new LlamadaFun
 TIPO : 
         TK_entero {$$ = Tipo.ENTERO} | 
         TK_double {$$ = Tipo.DOUBLE} |
-        TK_cadena {$$ = Tipo.CADENA} ;
+        TK_cadena {$$ = Tipo.CADENA} |
+        TK_boolean {$$ = Tipo.BOOLEANO} |
+        TK_caracter {$$ = Tipo.CARACTER} ;

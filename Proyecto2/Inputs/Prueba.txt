@@ -3,8 +3,8 @@ double Salario con valor 10.5 ;
 cadena saludo con valor "Jefferson";
 imprimir edad + 10.5;
 imprimir "edad" - 10;
-imprimir "hola" == "mundo";
-imprimir !("hola" == "hola" && "hola" == "mundo");
+imprimir "hola" == "hola";
+imprimir !("hola" == "hola" && "mundo" == "mundo"); //este tiene error
 si ( edad > 18 ) { 
     imprimir "es mayor de edad";
     imprimir "hola " + saludo;
@@ -30,3 +30,179 @@ imprimir "Resultado: " + resultado;
 entero i con valor 0 ;
 i ++
 imprimir i;
+
+//hola
+
+/*
+que tal estan
+jejeje
+*/
+
+cadena saludos con valor "holaaaaa";
+imprimir saludos;
+
+// Caracter
+caracter letra con valor 'A';
+imprimir letra;
+
+caracter letraz con valor 'Z';
+imprimir letraz;
+
+// Cadenas con secuencias de escape
+cadena saludoConNuevaLinea con valor "Hola\nMundo";
+cadena saludoConTab con valor "Esto\tes\ttabulado";
+cadena rutaConBarra con valor "C:\\miCarpeta";
+cadena comillasDobles con valor "\"Esto es una cadena\"";
+cadena comillasSimples con valor "'Esto son comillas simples'";
+
+// Caracteres con secuencias de escape
+cadena saltoLinea con valor "\n";
+cadena tabulacion con valor "\t";
+cadena comillaDoble con valor "\"";
+cadena comillaSimple con valor "\'";
+
+// Imprimir todo
+imprimir saludoConNuevaLinea;
+imprimir saludoConTab;
+imprimir rutaConBarra;
+imprimir comillasDobles;
+imprimir comillasSimples;
+
+imprimir saltoLinea;
+imprimir tabulacion;
+imprimir comillaDoble;
+imprimir comillaSimple;
+
+// Prueba de Operadores Aritméticos: Suma
+
+// Entero + ...
+entero a con valor 5;
+entero b con valor 10;
+double c con valor 3.5;
+boolean d con valor true;
+caracter e con valor 'A';
+cadena f con valor "Hola";
+imprimir a;
+imprimir b;
+imprimir c;
+imprimir d;
+imprimir e;
+imprimir f;
+imprimir saltoLinea;
+
+cadena sumaaaaaa con valor "sumaaaaaa";
+imprimir sumaaaaaa;
+// Entero + Entero
+imprimir a + b;      // Esperado: Entero (15)
+imprimir a + c;      // Esperado: Decimal (8.5)
+imprimir a + d;      // Esperado: Entero (6)
+imprimir a + e;      // Esperado: Entero (70, si 'A' se convierte a código ASCII)
+imprimir a + f;      // Esperado: Cadena ("5Hola")
+imprimir saltoLinea;
+
+// Decimal + ...
+imprimir c + a;      // Decimal
+imprimir c + c;      // Decimal
+imprimir c + d;      // Decimal
+imprimir c + e;      // Decimal
+imprimir c + f;      // Cadena
+imprimir saltoLinea;
+
+// Boolean + ...
+imprimir d + a;      // Entero
+imprimir d + c;      // Decimal
+imprimir d + d;      // Null (error)
+imprimir d + e;      // Null (error)
+imprimir d + f;      // Cadena
+imprimir saltoLinea;
+
+// Carácter + ...
+imprimir e + a;      // Entero
+imprimir e + c;      // Decimal
+imprimir e + d;      // Null (error)
+imprimir e + e;      // Cadena ("AA")
+imprimir e + f;      // Cadena
+imprimir saltoLinea;
+
+// Cadena + ...
+imprimir f + a;      // Cadena
+imprimir f + c;      // Cadena
+imprimir f + d;      // Cadena
+imprimir f + e;      // Cadena
+imprimir f + f;      // Cadena
+imprimir saltoLinea;
+
+// Prueba de Operadores Aritméticos: Resta
+cadena restaaaaaaa con valor "restaaaaaaa";
+imprimir restaaaaaaa;
+
+// Entero - ...
+imprimir a - b;      // Esperado: Entero (-5)
+imprimir a - c;      // Esperado: Decimal (1.5)
+imprimir a - d;      // Esperado: Entero (4)
+imprimir a - e;      // Esperado: Entero (-60, si 'A' es código ASCII)
+imprimir saltoLinea;
+
+// Decimal - ...
+imprimir c - a;      // Esperado: Decimal (-1.5)
+imprimir c - c;      // Esperado: Decimal (0)
+imprimir c - d;      // Esperado: Decimal (2.5)
+imprimir c - e;      // Esperado: Decimal (-61.5)
+imprimir saltoLinea;
+
+// Boolean - ...
+imprimir d - a;      // Esperado: Entero (-4)
+imprimir d - c;      // Esperado: Decimal (-2.5)
+imprimir d - d;      // Esperado: Null (error)
+imprimir d - e;      // Esperado: Null (error)
+imprimir saltoLinea;
+
+// Caracter - ...
+imprimir e - a;      // Esperado: Entero (60)
+imprimir e - c;      // Esperado: Decimal (61.5)
+imprimir e - d;      // Esperado: Null (error)
+imprimir e - e;      // Esperado: Null (error)
+imprimir saltoLinea;
+
+cadena multi con valor "multi";
+imprimir multi;
+
+// Entero * ...
+imprimir a * b;      // Esperado: 50 (Entero)
+imprimir a * c;      // Esperado: 17.5 (Decimal)
+imprimir a * e;      // Esperado: 325 (Entero, 5 * 65)
+imprimir saltoLinea;
+
+// Decimal * ...
+imprimir c * a;      // Esperado: 17.5 (Decimal)
+imprimir c * c;      // Esperado: 12.25 (Decimal)
+imprimir c * e;      // Esperado: 227.5 (Decimal, 3.5 * 65)
+imprimir saltoLinea;
+
+// Caracter * ...
+imprimir e * a;      // Esperado: 325 (Entero, 65 * 5)
+imprimir e * c;      // Esperado: 227.5 (Decimal, 65 * 3.5)
+imprimir e * e;      // Esperado: NULL (Caracter * Caracter no permitido)
+imprimir saltoLinea;
+
+//hay que cambiarle los valores para la divicions porque sus resultados son para otros datos
+cadena diviiiiii con valor "diviiiiii";
+imprimir diviiiiii;
+
+// Entero / ...
+imprimir a / b;      // Esperado: 5 (Decimal)
+imprimir a / c;      // Esperado: 2.857142857142857 (Decimal)
+imprimir a / d;      // Esperado: 10 (Decimal, true -> 1)
+imprimir saltoLinea;
+
+// Decimal / ...
+imprimir c / a;      // Esperado: 0.35 (Decimal)
+imprimir c / c;      // Esperado: 1 (Decimal)
+imprimir c / d;      // Esperado: 3.5 (Decimal, true -> 1)
+imprimir saltoLinea;
+
+// Carácter / ...
+imprimir e / a;      // Esperado: 6.5 (Decimal, 65 / 10)
+imprimir e / c;      // Esperado: 18.571428571428573 (Decimal, 65 / 3.5)
+imprimir e / e;      // Esperado: NULL (Caracter / Caracter no es válido)
+imprimir saltoLinea;

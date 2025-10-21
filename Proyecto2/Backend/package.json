@@ -9,11 +9,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@types/express": "^5.0.1",
-    "@types/node": "^22.13.10",
+    "@types/express": "^5.0.3",
+    "@types/node": "^22.18.11",
     "cors": "^2.8.5",
     "express": "^4.21.2",
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.10"
   },
   "description": ""
 }
