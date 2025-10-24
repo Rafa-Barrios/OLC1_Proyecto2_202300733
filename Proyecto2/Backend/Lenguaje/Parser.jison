@@ -53,7 +53,10 @@ CHAR        \'([^\'\\]|\\.)\'
 '-'                     { return 'TK_menos'           }
 '*'                     { return 'TK_multiplicacion'  }
 '/'                     { return 'TK_division'        }
+'%'                     { return 'TK_modulo'          }
+'^'                     { return 'TK_potencia'        }
 '=='                    { return 'TK_igualdad'        }
+'!='                    { return 'TK_diferente'       }
 '='                     { return 'TK_asignacion'      }
 '>='                    { return 'TK_mayorIgual'      }
 '<='                    { return 'TK_menorIgual'      }
@@ -62,10 +65,13 @@ CHAR        \'([^\'\\]|\\.)\'
 '&&'                    { return 'TK_and'             }
 '||'                    { return 'TK_or'              }
 '!'                     { return 'TK_not'             }
+'?'                     { return 'TK_interrogacion'   }
+':'                     { return 'TK_dosPuntos'       }
 '('                     { return 'TK_parAbre'         }
 ')'                     { return 'TK_parCierra'       }
 '{'                     { return 'TK_llaveAbre'       }
 '}'                     { return 'TK_llaveCierra'     }
+','                     { return 'TK_coma'; }
 ';'                     { return 'TK_puntoComa'       }
 .                       { errores.push(new Error(yylloc.first_line, yylloc.first_column + 1, TipoError.LEXICO, `Caracter no reconocido «${yytext}»`)) }
 <<EOF>>                 { return 'EOF' }
@@ -80,6 +86,7 @@ CHAR        \'([^\'\\]|\\.)\'
     const { Primitivo } = require('../Clases/Expresiones/Primitivo');
     const { AccesoID } = require('../Clases/Expresiones/AccesoID');
     const { Aritmetico } = require('../Clases/Expresiones/Aritmetico');
+    const { Ternario } = require('../Clases/Expresiones/Ternario');
     const { Relacional } = require('../Clases/Expresiones/Relacional');
     const { Logico } = require('../Clases/Expresiones/Logico');
     const { Retorno } = require('../Clases/Expresiones/Retorno');
@@ -98,10 +105,13 @@ CHAR        \'([^\'\\]|\\.)\'
 %left 'TK_or'
 %left 'TK_and'
 %right 'TK_not'
-%left 'TK_igualdad', 'TK_mayorIgual', 'TK_menorIgual', 'TK_mayor', 'TK_menor'
+%left 'TK_igualdad', 'TK_diferente', 'TK_mayorIgual', 'TK_menorIgual', 'TK_mayor', 'TK_menor'
 %left 'TK_mas', 'TK_menos'
-%left 'TK_multiplicacion', 'TK_division'
-%left 'TK_parAbre', 'TK_parCierra'
+%left 'TK_multiplicacion', 'TK_division', 'TK_modulo'
+//%left 'TK_parAbre', 'TK_parCierra'
+%right 'TK_potencia'
+%right 'TK_interrogacion' 'TK_dosPuntos'
+%right UMINUS
 
 // %right TK_negacionUnaria
 
@@ -109,11 +119,13 @@ CHAR        \'([^\'\\]|\\.)\'
 %start INICIO
 %%
 
-INICIO : INSTRUCCIONES EOF {return $1} |
-        EOF                {return []} ;
+INICIO :    
+            INSTRUCCIONES EOF {return $1} |
+            EOF                {return []} ;
 
-INSTRUCCIONES : INSTRUCCIONES INSTRUCCION {$$.push($2)} |
-                INSTRUCCION               {$$ = [$1]  } ;
+INSTRUCCIONES :
+            INSTRUCCIONES INSTRUCCION { if (Array.isArray($2)) $$.push(...$2); else $$.push($2); } |
+            INSTRUCCION { $$ = Array.isArray($1) ? [...$1] : [$1]; } ;
 
 INSTRUCCION :
             DECLARACION_VAR {$$ = $1} |
@@ -126,8 +138,22 @@ INSTRUCCION :
             RETORNAR TK_puntoComa        {$$ = $1} |
             error           {errores.push(new Error(this._$.first_line, this._$.first_column + 1, TipoError.SINTACTICO, `No se esperaba «${yytext}»`))} ;
 
+LISTA_IDS : 
+            TK_id { $$ = [$1]; } |
+            LISTA_IDS TK_coma TK_id { $1.push($3); $$ = $1; } ;
+
+LISTA_EXPRESIONES :
+            EXPRESION { $$ = [$1]; } | 
+            LISTA_EXPRESIONES TK_coma EXPRESION { $1.push($3); $$ = $1; } ;
+
+
 DECLARACION_VAR :
-            TIPO TK_id TK_con TK_valor EXPRESION TK_puntoComa {$$ = new DeclaracionID(@1.first_line, @1.first_column, $2, $1, $5)} ;
+            TIPO TK_id TK_con TK_valor EXPRESION TK_puntoComa { $$ = new DeclaracionID(@1.first_line, @1.first_column, $2, $1, $5); } |
+            TIPO TK_id TK_puntoComa                           { $$ = new DeclaracionID(@1.first_line, @1.first_column, $2, $1, null); } |
+            TIPO TK_id TK_asignacion EXPRESION TK_puntoComa   { $$ = new DeclaracionID(@1.first_line, @1.first_column, $2, $1, $4); } |
+            TIPO LISTA_IDS TK_puntoComa                       { $$ = []; var idsList = $2; for (var i = 0; i < idsList.length; i++) { $$.push(new DeclaracionID(@1.first_line, @1.first_column, idsList[i], $1, null)); } } |
+            TIPO LISTA_IDS TK_con TK_valor LISTA_EXPRESIONES TK_puntoComa { $$ = []; var idsList = $2; var valoresList = $5; for (var i = 0; i < idsList.length; i++) { var val = (i < valoresList.length) ? valoresList[i] : null; $$.push(new DeclaracionID(@1.first_line, @1.first_column, idsList[i], $1, val)); } } |
+            TIPO LISTA_IDS TK_asignacion LISTA_EXPRESIONES TK_puntoComa { $$ = []; var idsList = $2; var valoresList = $4; for (var i = 0; i < idsList.length; i++) { var val = (i < valoresList.length) ? valoresList[i] : null; $$.push(new DeclaracionID(@1.first_line, @1.first_column, idsList[i], $1, val)); } } ;
 
 REASIGNACION : TK_id TK_asignacion EXPRESION {$$ = new Reasignacion(@1.first_line, @1.first_column, $1, $3)} ;
 
@@ -146,9 +172,10 @@ FUNCION : TK_funcion TIPO TK_id TK_parAbre TK_parCierra TK_llaveAbre INSTRUCCION
 
 // Expresiones
 EXPRESION : 
-            ARITMETICOS  {$$ = $1} |
+            TERNARIO     {$$ = $1} |
             RELACIONALES {$$ = $1} |
             LOGICOS      {$$ = $1} |
+            ARITMETICOS  {$$ = $1} |
             CASTEO                 |
             LLAMADA_FUNCION           {$$ = $1} |
             TK_id      {$$ = new AccesoID(@1.first_line, @1.first_column, $1              )} |
@@ -158,16 +185,32 @@ EXPRESION :
             TK_char    {$$ = new Primitivo(@1.first_line, @1.first_column, $1, Tipo.CARACTER)} |
             TK_true  {$$ = new Primitivo(@1.first_line, @1.first_column, true, Tipo.BOOLEANO)} |
             TK_false {$$ = new Primitivo(@1.first_line, @1.first_column, false, Tipo.BOOLEANO)} |
-            TK_parAbre EXPRESION TK_parCierra {$$ = $2} ;
+            TK_parAbre EXPRESION TK_parCierra {$$ = $2};
+
+TERNARIO :
+      RELACIONALES TK_interrogacion EXPRESION TK_dosPuntos EXPRESION
+        { $$ = new Ternario(@1.first_line, @1.first_column, $1, $3, $5); } ;
 
 ARITMETICOS : 
+            // Negación unaria (-exp)
+            TK_menos EXPRESION %prec UMINUS
+                { $$ = new Aritmetico(
+                        @1.first_line,
+                        @1.first_column,
+                        new Primitivo(@1.first_line, @1.first_column, 0, Tipo.ENTERO),
+                        $1,
+                        $2
+                    ); } |    
             EXPRESION TK_mas EXPRESION            {$$ = new Aritmetico(@1.first_line, @1.first_column, $1, $2, $3)} |
             EXPRESION TK_menos EXPRESION          {$$ = new Aritmetico(@1.first_line, @1.first_column, $1, $2, $3)} |
             EXPRESION TK_multiplicacion EXPRESION {$$ = new Aritmetico(@1.first_line, @1.first_column, $1, $2, $3)} |
-            EXPRESION TK_division EXPRESION       {$$ = new Aritmetico(@1.first_line, @1.first_column, $1, $2, $3)} ;
+            EXPRESION TK_division EXPRESION       {$$ = new Aritmetico(@1.first_line, @1.first_column, $1, $2, $3)} |
+            EXPRESION TK_potencia EXPRESION       {$$ = new Aritmetico(@1.first_line, @1.first_column, $1, $2, $3)} |
+            EXPRESION TK_modulo EXPRESION         {$$ = new Aritmetico(@1.first_line, @1.first_column, $1, $2, $3)} ;
 
 RELACIONALES :
             EXPRESION TK_igualdad EXPRESION   {$$ = new Relacional(@1.first_line, @1.first_column, $1, $2, $3)} |
+            EXPRESION TK_diferente EXPRESION  {$$ = new Relacional(@1.first_line, @1.first_column, $1, $2, $3)} |
             EXPRESION TK_mayor EXPRESION      {$$ = new Relacional(@1.first_line, @1.first_column, $1, $2, $3)} |
             EXPRESION TK_menor EXPRESION      {$$ = new Relacional(@1.first_line, @1.first_column, $1, $2, $3)} |
             EXPRESION TK_mayorIgual EXPRESION {$$ = new Relacional(@1.first_line, @1.first_column, $1, $2, $3)} |

@@ -21,6 +21,13 @@ export class Aritmetico extends Expresion {
                 return this.multiplicar(entorno);
             case "/":
                 return this.dividir(entorno);
+            case "^":
+                return this.potencia(entorno);
+            case "%":
+                return this.modulo(entorno);
+            case "-":
+                if (!this.exp2) return this.negacionUnaria(entorno); // unario
+                return this.restar(entorno); // binario
             default:
                 throw new Error(`Operador ${this.signo} no soportado`);
         }
@@ -123,4 +130,75 @@ export class Aritmetico extends Expresion {
 
         return { valor: 'NULL', tipo: Tipo.NULL };
     }
+
+    private potencia(entorno: Entorno): TipoRetorno {
+        const valor1 = this.exp1.ejecutar(entorno);
+        const valor2 = this.exp2.ejecutar(entorno);
+        this.tipo = suma[valor1.tipo][valor2.tipo];
+
+        if (this.tipo === Tipo.NULL) 
+            return { valor: 'NULL', tipo: Tipo.NULL };
+
+        const getNumeric = (v: TipoRetorno) => {
+            if (v.tipo === Tipo.BOOLEANO) return v.valor ? 1 : 0;
+            if (v.tipo === Tipo.CARACTER) return v.valor.charCodeAt(0);
+            return Number(v.valor);
+        };
+
+        const base = getNumeric(valor1);
+        const exponente = getNumeric(valor2);
+
+        if (this.tipo === Tipo.ENTERO) {
+            return { valor: Math.floor(Math.pow(base, exponente)), tipo: Tipo.ENTERO };
+        } else if (this.tipo === Tipo.DOUBLE) {
+            return { valor: Math.pow(base, exponente), tipo: Tipo.DOUBLE };
+        }
+
+        return { valor: 'NULL', tipo: Tipo.NULL };
+    }
+
+    private modulo(entorno: Entorno): TipoRetorno {
+        const valor1 = this.exp1.ejecutar(entorno);
+        const valor2 = this.exp2.ejecutar(entorno);
+
+        // definimos tipo de resultado según la tabla
+        this.tipo = suma[valor1.tipo][valor2.tipo]; // puedes usar la misma tabla 'suma' para determinar compatibilidad
+
+        // validación general
+        if (this.tipo === Tipo.NULL) return { valor: 'NULL', tipo: Tipo.NULL };
+
+        // función auxiliar para obtener valor numérico correcto
+        const getNumeric = (v: TipoRetorno) => {
+            if (v.tipo === Tipo.BOOLEANO) return v.valor ? 1 : 0;
+            if (v.tipo === Tipo.CARACTER) return v.valor.charCodeAt(0);
+            return Number(v.valor);
+        };
+
+        // validaciones especiales de división entre 0
+        const divisor = getNumeric(valor2);
+        if (divisor === 0) {
+            console.error("Error semántico: Módulo por 0 no permitido");
+            return { valor: 'NULL', tipo: Tipo.NULL };
+        }
+
+        // cálculo del módulo
+        if (this.tipo === Tipo.ENTERO || this.tipo === Tipo.DOUBLE) {
+            return { valor: getNumeric(valor1) % divisor, tipo: Tipo.DOUBLE };
+        }
+
+        return { valor: 'NULL', tipo: Tipo.NULL };
+    }
+
+    private negacionUnaria(entorno: Entorno): TipoRetorno {
+        const valor = this.exp1.ejecutar(entorno);
+
+        if (valor.tipo === Tipo.ENTERO) {
+            return { valor: -Math.floor(this.getNumeric(valor)), tipo: Tipo.ENTERO };
+        } else if (valor.tipo === Tipo.DOUBLE) {
+            return { valor: -this.getNumeric(valor), tipo: Tipo.DOUBLE };
+        }
+
+        // Otros tipos son inválidos
+        return { valor: 'NULL', tipo: Tipo.NULL };
+}
 }
