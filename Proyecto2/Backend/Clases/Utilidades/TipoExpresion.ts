@@ -6,5 +6,6 @@ export enum TipoExpresion {
     ACCESO_ID,
     LLAMADA_FUNCION,
     RETORNO,
-    TERNARIO
+    TERNARIO,
+    CASTEO
 }

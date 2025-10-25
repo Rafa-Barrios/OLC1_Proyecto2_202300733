@@ -28,8 +28,8 @@ resultado = ejecutar suma() ;
 imprimir "Resultado: " + resultado;
 
 entero i con valor 0 ;
-i ++
-imprimir i;
+//i ++
+//Simprimir i;
 
 //hola
 
@@ -387,3 +387,47 @@ imprimir s2;
 imprimir s3;
 imprimir dx;
 */
+
+//casteos
+imprimir "=== casteos ===";
+
+entero edad5 con valor (entero) 15.6;
+caracter letra5 con valor (caracter) 70;
+double precio5;
+precio5 = (double) 16;
+
+imprimir edad5;
+imprimir letra5;
+imprimir precio5;
+imprimir saltoLinea;
+
+//Icre y Decre
+imprimir "=== Icre y Decre ===";
+
+// Declaración de variables
+entero edad6 con valor 18;
+entero contador6 con valor 0;
+
+// Incremento
+edad6++;
+contador6++;
+
+// Decremento
+edad6--;
+contador6--;
+
+// Imprimir resultados
+imprimir edad6;      // Esperado: 18
+imprimir contador6;   // Esperado: 0
+
+// Combinación
+edad6++;
+edad6++;
+edad6--;
+imprimir edad6;      // Esperado: 19
+
+contador6++;
+contador6++;
+contador6++;
+contador6--;
+imprimir contador6;   // Esperado: 2

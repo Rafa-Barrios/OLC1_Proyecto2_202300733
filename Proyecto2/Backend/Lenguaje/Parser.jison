@@ -48,6 +48,8 @@ CHAR        \'([^\'\\]|\\.)\'
 {CHAR}                  { yytext = yytext.slice(1, yyleng - 1); return 'TK_char'; }
 {DOUBLE}                { return 'TK_decimal' }
 {INTEGER}               { return 'TK_int'    }
+"++"                    { return 'TK_incremento'      }
+"--"                    { return 'TK_decremento'      }
 // Símbolos
 '+'                     { return 'TK_mas'             }
 '-'                     { return 'TK_menos'           }
@@ -87,6 +89,7 @@ CHAR        \'([^\'\\]|\\.)\'
     const { AccesoID } = require('../Clases/Expresiones/AccesoID');
     const { Aritmetico } = require('../Clases/Expresiones/Aritmetico');
     const { Ternario } = require('../Clases/Expresiones/Ternario');
+    const { Casteo } = require('../Clases/Expresiones/Casteo');
     const { Relacional } = require('../Clases/Expresiones/Relacional');
     const { Logico } = require('../Clases/Expresiones/Logico');
     const { Retorno } = require('../Clases/Expresiones/Retorno');
@@ -99,6 +102,8 @@ CHAR        \'([^\'\\]|\\.)\'
     const { Funcion } = require('../Clases/Instrucciones/Funcion');
     const { Para } = require('../Clases/Instrucciones/Para');
     const { Incremento } = require('../Clases/Instrucciones/Incremento');
+    const { Decremento } = require('../Clases/Instrucciones/Decremento');
+
 %}
 
 // Precedencia de operadores
@@ -129,9 +134,9 @@ INSTRUCCIONES :
 
 INSTRUCCION :
             DECLARACION_VAR {$$ = $1} |
-            REASIGNACION TK_puntoComa {$$ = $1} |
+            REASIGNACION TK_puntoComa   {$$ = $1} |
             IMPRIMIR TK_puntoComa       {$$ = $1} |
-            INCREMENTO   {$$ = $1} |
+            INCREMENTO_DECREMENTO       {$$ = $1} |
             CONDICIONAL_SI  {$$ = $1} |
             CICLO_PARA      {$$ = $1} |
             FUNCION         {$$ = $1} |
@@ -176,7 +181,7 @@ EXPRESION :
             RELACIONALES {$$ = $1} |
             LOGICOS      {$$ = $1} |
             ARITMETICOS  {$$ = $1} |
-            CASTEO                 |
+            CASTEO       {$$ = $1} |
             LLAMADA_FUNCION           {$$ = $1} |
             TK_id      {$$ = new AccesoID(@1.first_line, @1.first_column, $1              )} |
             TK_int     {$$ = new Primitivo(@1.first_line, @1.first_column, $1, Tipo.ENTERO)} |
@@ -221,10 +226,12 @@ LOGICOS :
             EXPRESION TK_or EXPRESION  {$$ = new Logico(@1.first_line, @1.first_column, $1, $2, $3)}|
             TK_not EXPRESION           {$$ = new Logico(@1.first_line, @1.first_column, undefined, $1, $2)};
 
-INCREMENTO : EXPRESION TK_mas TK_mas {$$ = new Incremento(@1.first_line, @1.first_column, $1)} ;
+INCREMENTO_DECREMENTO :
+            TK_id TK_incremento TK_puntoComa { $$ = new Incremento(@1.first_line, @1.first_column, $1); } |
+            TK_id TK_decremento TK_puntoComa { $$ = new Decremento(@1.first_line, @1.first_column, $1); } ;
 
 CASTEO :
-        TK_parAbre TIPO TK_parCierra EXPRESION ;
+        TK_parAbre TIPO TK_parCierra EXPRESION { $$ = new Casteo(@1.first_line, @1.first_column, $2, $4); } ;
 
 RETORNAR :
         TK_retornar EXPRESION {$$ = new Retorno(@1.first_line, @1.first_column, $2)} ;
