@@ -26,19 +26,21 @@ CHAR        \'([^\'\\]|\\.)\'
 "entero"                { return 'TK_entero'  }
 "double"                { return 'TK_double'  }
 "boolean"               { return 'TK_boolean' }
-"true"                  { return 'TK_true' }
-"false"                 { return 'TK_false' }
+"true"                  { return 'TK_true'    }
+"false"                 { return 'TK_false'   } 
 "cadena"                { return 'TK_cadena'  }
-"caracter"              { return 'TK_caracter' }
+"caracter"              { return 'TK_caracter'}
 "con"                   { return 'TK_con'     }
 "valor"                 { return 'TK_valor'   }
 "imprimir"              { return 'TK_imprimir'}
 "si"                    { return 'TK_if'      }
 "o"                     { return 'TK_else'    }
 "para"                  { return 'TK_para'    }
-"funcion"               { return 'TK_funcion'}
-"retornar"               { return 'TK_retornar'}
-"ejecutar"               { return 'TK_ejecutar'}
+"funcion"               { return 'TK_funcion' }
+"retornar"              { return 'TK_retornar'}
+"ejecutar"              { return 'TK_ejecutar'}
+"vector"                { return 'TK_vector'  }
+"de"                    { return 'TK_de'      }
 // Comentarios
 "//".*                                 {/* Ignorar comentario de una línea */}
 "/*"([^*]|\*+[^*/])*\*+"/"             {/* Ignorar comentario multilínea */}
@@ -73,7 +75,9 @@ CHAR        \'([^\'\\]|\\.)\'
 ')'                     { return 'TK_parCierra'       }
 '{'                     { return 'TK_llaveAbre'       }
 '}'                     { return 'TK_llaveCierra'     }
-','                     { return 'TK_coma'; }
+'['                     { return 'TK_corcheteAbre'    }
+']'                     { return 'TK_corcheteCierra'  }
+','                     { return 'TK_coma';           }
 ';'                     { return 'TK_puntoComa'       }
 .                       { errores.push(new Error(yylloc.first_line, yylloc.first_column + 1, TipoError.LEXICO, `Caracter no reconocido «${yytext}»`)) }
 <<EOF>>                 { return 'EOF' }
@@ -103,6 +107,10 @@ CHAR        \'([^\'\\]|\\.)\'
     const { Para } = require('../Clases/Instrucciones/Para');
     const { Incremento } = require('../Clases/Instrucciones/Incremento');
     const { Decremento } = require('../Clases/Instrucciones/Decremento');
+    const { AccesoVector } = require('../Clases/Expresiones/AccesoVector');
+    const { DeclaracionVector } = require('../Clases/Instrucciones/DeclaracionVector');
+    const { ReasignacionVector } = require('../Clases/Instrucciones/ReasignacionVector');
+
 
 %}
 
@@ -133,14 +141,16 @@ INSTRUCCIONES :
             INSTRUCCION { $$ = Array.isArray($1) ? [...$1] : [$1]; } ;
 
 INSTRUCCION :
-            DECLARACION_VAR {$$ = $1} |
+            DECLARACION_VAR             {$$ = $1} |
             REASIGNACION TK_puntoComa   {$$ = $1} |
+            REASIGNACION_VECTOR TK_puntoComa {$$ = $1} |
             IMPRIMIR TK_puntoComa       {$$ = $1} |
             INCREMENTO_DECREMENTO       {$$ = $1} |
-            CONDICIONAL_SI  {$$ = $1} |
-            CICLO_PARA      {$$ = $1} |
-            FUNCION         {$$ = $1} |
-            RETORNAR TK_puntoComa        {$$ = $1} |
+            CONDICIONAL_SI              {$$ = $1} |
+            CICLO_PARA                  {$$ = $1} |
+            FUNCION                     {$$ = $1} |
+            RETORNAR TK_puntoComa       {$$ = $1} |
+            DECLARACION_VECTOR          {$$ = $1} |
             error           {errores.push(new Error(this._$.first_line, this._$.first_column + 1, TipoError.SINTACTICO, `No se esperaba «${yytext}»`))} ;
 
 LISTA_IDS : 
@@ -151,6 +161,11 @@ LISTA_EXPRESIONES :
             EXPRESION { $$ = [$1]; } | 
             LISTA_EXPRESIONES TK_coma EXPRESION { $1.push($3); $$ = $1; } ;
 
+LISTA_LISTAS_EXPRESIONES :
+        TK_corcheteAbre LISTA_EXPRESIONES TK_corcheteCierra
+            { $$ = [$2]; } |
+        LISTA_LISTAS_EXPRESIONES TK_coma TK_corcheteAbre LISTA_EXPRESIONES TK_corcheteCierra
+            { $1.push($4); $$ = $1; };
 
 DECLARACION_VAR :
             TIPO TK_id TK_con TK_valor EXPRESION TK_puntoComa { $$ = new DeclaracionID(@1.first_line, @1.first_column, $2, $1, $5); } |
@@ -160,7 +175,55 @@ DECLARACION_VAR :
             TIPO LISTA_IDS TK_con TK_valor LISTA_EXPRESIONES TK_puntoComa { $$ = []; var idsList = $2; var valoresList = $5; for (var i = 0; i < idsList.length; i++) { var val = (i < valoresList.length) ? valoresList[i] : null; $$.push(new DeclaracionID(@1.first_line, @1.first_column, idsList[i], $1, val)); } } |
             TIPO LISTA_IDS TK_asignacion LISTA_EXPRESIONES TK_puntoComa { $$ = []; var idsList = $2; var valoresList = $4; for (var i = 0; i < idsList.length; i++) { var val = (i < valoresList.length) ? valoresList[i] : null; $$.push(new DeclaracionID(@1.first_line, @1.first_column, idsList[i], $1, val)); } } ;
 
+// === Declaración de Vectores ===
+DECLARACION_VECTOR :
+        // Tipo 1: vector declarado con tamaño (1D)
+        TIPO TK_corcheteAbre TK_corcheteCierra TK_id TK_asignacion TK_vector TIPO 
+        TK_corcheteAbre EXPRESION TK_corcheteCierra TK_puntoComa
+        {
+            // Ejemplo: entero[] vector1 = vector entero[3];
+            $$ = new DeclaracionVector(@1.first_line, @1.first_column, $4, $1, null, 1, $9);
+        }
+        |
+        // Tipo 1: vector declarado con tamaño (2D)
+        TIPO TK_corcheteAbre TK_corcheteCierra TK_corcheteAbre TK_corcheteCierra 
+        TK_id TK_asignacion TK_vector TIPO 
+        TK_corcheteAbre EXPRESION TK_corcheteCierra 
+        TK_corcheteAbre EXPRESION TK_corcheteCierra TK_puntoComa
+        {
+            // Ejemplo: caracter[][] vector2 = vector caracter[2][2];
+            $$ = new DeclaracionVector(@1.first_line, @1.first_column, $6, $1, null, 2, [$11, $15]);
+        }
+        |
+        // Tipo 2: vector con lista de valores (1D)
+        TIPO TK_corcheteAbre TK_corcheteCierra TK_id TK_asignacion 
+        TK_corcheteAbre LISTA_EXPRESIONES TK_corcheteCierra TK_puntoComa
+        {
+            // Ejemplo: cadena[] vector3 = ["Hola", "Mundo"];
+            $$ = new DeclaracionVector(@1.first_line, @1.first_column, $4, $1, $7, 1, null);
+        }
+        |
+        // Tipo 2: vector con lista de listas (2D)
+        TIPO TK_corcheteAbre TK_corcheteCierra TK_corcheteAbre TK_corcheteCierra 
+        TK_id TK_asignacion TK_corcheteAbre LISTA_LISTAS_EXPRESIONES TK_corcheteCierra TK_puntoComa
+        {
+            // Ejemplo: entero[][] vector4 = [[1,2],[3,4]];
+            $$ = new DeclaracionVector(@1.first_line, @1.first_column, $6, $1, $9, 2, null);
+        };
+
 REASIGNACION : TK_id TK_asignacion EXPRESION {$$ = new Reasignacion(@1.first_line, @1.first_column, $1, $3)} ;
+
+REASIGNACION_VECTOR :
+      // Vector unidimensional: vector[0] = valor;
+      TK_id TK_corcheteAbre EXPRESION TK_corcheteCierra
+        TK_asignacion EXPRESION
+        { $$ = new ReasignacionVector(@1.first_line, @1.first_column, $1, [$3], $6); }
+    |
+      // Vector bidimensional: vector[1][0] = valor;
+      TK_id TK_corcheteAbre EXPRESION TK_corcheteCierra
+        TK_corcheteAbre EXPRESION TK_corcheteCierra
+        TK_asignacion EXPRESION
+        { $$ = new ReasignacionVector(@1.first_line, @1.first_column, $1, [$3, $6], $9); };
 
 IMPRIMIR :
             TK_imprimir EXPRESION {$$ = new Imprimir(@1.first_line, @1.first_column, $2)} ;
@@ -190,8 +253,12 @@ EXPRESION :
             TK_char    {$$ = new Primitivo(@1.first_line, @1.first_column, $1, Tipo.CARACTER)} |
             TK_true  {$$ = new Primitivo(@1.first_line, @1.first_column, true, Tipo.BOOLEANO)} |
             TK_false {$$ = new Primitivo(@1.first_line, @1.first_column, false, Tipo.BOOLEANO)} |
-            TK_parAbre EXPRESION TK_parCierra {$$ = $2};
-
+            TK_parAbre EXPRESION TK_parCierra {$$ = $2} |
+            TK_id TK_corcheteAbre EXPRESION TK_corcheteCierra
+                { $$ = new AccesoVector(@1.first_line, @1.first_column, $1, [$3]); } |
+            TK_id TK_corcheteAbre EXPRESION TK_corcheteCierra 
+                TK_corcheteAbre EXPRESION TK_corcheteCierra
+                { $$ = new AccesoVector(@1.first_line, @1.first_column, $1, [$3, $6]); };
 TERNARIO :
       RELACIONALES TK_interrogacion EXPRESION TK_dosPuntos EXPRESION
         { $$ = new Ternario(@1.first_line, @1.first_column, $1, $3, $5); } ;
@@ -231,16 +298,17 @@ INCREMENTO_DECREMENTO :
             TK_id TK_decremento TK_puntoComa { $$ = new Decremento(@1.first_line, @1.first_column, $1); } ;
 
 CASTEO :
-        TK_parAbre TIPO TK_parCierra EXPRESION { $$ = new Casteo(@1.first_line, @1.first_column, $2, $4); } ;
+            TK_parAbre TIPO TK_parCierra EXPRESION { $$ = new Casteo(@1.first_line, @1.first_column, $2, $4); } ;
 
 RETORNAR :
-        TK_retornar EXPRESION {$$ = new Retorno(@1.first_line, @1.first_column, $2)} ;
+            TK_retornar EXPRESION {$$ = new Retorno(@1.first_line, @1.first_column, $2)} ;
 
-LLAMADA_FUNCION : TK_ejecutar TK_id TK_parAbre TK_parCierra {$$ = new LlamadaFuncion(@1.first_line, @1.first_column, $2, undefined)} ;
+LLAMADA_FUNCION : 
+            TK_ejecutar TK_id TK_parAbre TK_parCierra {$$ = new LlamadaFuncion(@1.first_line, @1.first_column, $2, undefined)} ;
 
 TIPO : 
-        TK_entero {$$ = Tipo.ENTERO} | 
-        TK_double {$$ = Tipo.DOUBLE} |
-        TK_cadena {$$ = Tipo.CADENA} |
-        TK_boolean {$$ = Tipo.BOOLEANO} |
-        TK_caracter {$$ = Tipo.CARACTER} ;
+            TK_entero {$$ = Tipo.ENTERO} | 
+            TK_double {$$ = Tipo.DOUBLE} |
+            TK_cadena {$$ = Tipo.CADENA} |
+            TK_boolean {$$ = Tipo.BOOLEANO} |
+            TK_caracter {$$ = Tipo.CARACTER} ;
