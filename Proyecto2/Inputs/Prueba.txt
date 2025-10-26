@@ -502,3 +502,18 @@ para (i = 0; i < 7; i++) {
 
 imprimir "Fin del ciclo para";
 imprimir saltoLinea;
+
+// ===== PRUEBA HACER HASTA QUE =====
+imprimir "=== PRUEBA HACER HASTA QUE ====";
+
+// Declaración de variable
+entero j con valor 0;
+
+// Ciclo Hacer...Hasta Que
+hacer {
+    imprimir j;
+    j = j + 1;
+} hasta que (j >= 10)
+
+imprimir "Fin del ciclo HacerHastaQue";
+imprimir saltoLinea;

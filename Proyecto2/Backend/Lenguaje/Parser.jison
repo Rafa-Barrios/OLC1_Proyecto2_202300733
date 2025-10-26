@@ -38,6 +38,8 @@ CHAR        \'([^\'\\]|\\.)\'
 "de lo contrario"       { return 'TK_deLoContrario'}
 "para"                  { return 'TK_para'    }
 "mientras"              { return 'TK_mientras'}
+"hacer"                 { return 'TK_hacer'   }
+"hasta que"             { return 'TK_hastaQue'}
 "funcion"               { return 'TK_funcion' }
 "retornar"              { return 'TK_retornar'}
 "ejecutar"              { return 'TK_ejecutar'}
@@ -108,6 +110,7 @@ CHAR        \'([^\'\\]|\\.)\'
     const { Funcion } = require('../Clases/Instrucciones/Funcion');
     const { Mientras } = require('../Clases/Instrucciones/Mientras');
     const { Para } = require('../Clases/Instrucciones/Para');
+    const { HacerHastaQue } = require('../Clases/Instrucciones/HacerHastaQue');
     const { Incremento } = require('../Clases/Instrucciones/Incremento');
     const { Decremento } = require('../Clases/Instrucciones/Decremento');
     const { AccesoVector } = require('../Clases/Expresiones/AccesoVector');
@@ -152,6 +155,7 @@ INSTRUCCION :
             CONDICIONAL_SI              {$$ = $1} |
             CICLO_MIENTRAS              {$$ = $1} |
             CICLO_PARA                  {$$ = $1} |
+            CICLO_HACER_HASTA_QUE       {$$ = $1} |
             FUNCION                     {$$ = $1} |
             RETORNAR TK_puntoComa       {$$ = $1} |
             DECLARACION_VECTOR          {$$ = $1} |
@@ -280,6 +284,11 @@ ACTUALIZACION_FOR :
 CICLO_PARA : 
         TK_para TK_parAbre REASIGNACION TK_puntoComa EXPRESION TK_puntoComa ACTUALIZACION_FOR TK_parCierra TK_llaveAbre INSTRUCCIONES TK_llaveCierra
         { $$ = new Para(@1.first_line, @1.first_column, $3, $5, $7, $10); } ;
+
+CICLO_HACER_HASTA_QUE :
+        TK_hacer TK_llaveAbre INSTRUCCIONES TK_llaveCierra TK_hastaQue TK_parAbre EXPRESION TK_parCierra
+        { $$ = new HacerHastaQue(@1.first_line, @1.first_column, $3, $7); };
+
 
 // === Funciones ===
 FUNCION : 
