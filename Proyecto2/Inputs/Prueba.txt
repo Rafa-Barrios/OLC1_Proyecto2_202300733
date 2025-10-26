@@ -410,7 +410,7 @@ entero contador6 con valor 0;
 
 // Incremento
 edad6++;
-contador++;
+contador6++;
 
 // Decremento
 edad6--;
@@ -431,3 +431,74 @@ contador6++;
 contador6++;
 contador6--;
 imprimir contador6;   // Esperado: 2
+imprimir saltoLinea;
+
+//vectoress
+imprimir "=== vectoress ===";
+
+// === Declaración de vectores ===
+entero[] vector1 = vector entero[3];
+cadena[] vector2 = ["Hola", "Mundo"];
+entero[][] vector3 = [[1,2],[3,4]];
+cadena[][] vector4 = [["A","B"],["C","D"]];
+
+// === Reasignación de vectores ===
+vector1[0] = 10;
+vector1[1] = 20;
+
+vector2[1] = "Adios";
+vector2[0] = "Hola Mundo";
+
+vector3[0][1] = 99;
+vector4[1][0] = "Z";
+
+// === Impresiones ===
+imprimir vector1[0];     // 10
+imprimir vector1[1];     // 20
+imprimir vector2[0];     // "Hola Mundo"
+imprimir vector2[1];     // "Adios"
+imprimir vector3[0][1];  // 99
+imprimir vector4[1][0];  // "Z"
+imprimir saltoLinea;
+
+//si 
+imprimir "=== siiiiiiiu  ===";
+
+entero xxx con valor 10;
+
+si (xxx > 15) {
+    imprimir "Mayor a 15";
+} o si (xxx > 5) {
+    imprimir "Mayor a 5";
+} de lo contrario {
+    imprimir "5 o menos";
+}
+imprimir saltoLinea;
+
+// =====  MIENTRAS =====
+imprimir "=== MIENTRAS ===";
+
+// Declaración inicial
+entero contador con valor 0;
+
+// Ciclo mientras simple
+mientras (contador < 5) {
+    imprimir contador;
+    contador++;
+}
+
+imprimir "Fin del ciclo mientras";
+imprimir saltoLinea;
+
+// =====  PARA =====
+imprimir "=== PARA ===";
+
+// Declaración inicial y ciclo
+entero i con valor 0;
+
+para (i = 0; i < 7; i++) {
+    imprimir i;
+}
+
+imprimir "Fin del ciclo para";
+imprimir saltoLinea;

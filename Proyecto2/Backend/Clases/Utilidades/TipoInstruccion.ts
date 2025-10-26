@@ -9,5 +9,6 @@ export enum tipoInstruccion {
     FUNCION,
     CREAR_OBJETOS,
     INCREMENTO,
-    DECREMENTO
+    DECREMENTO,
+    MIENTRAS
 }

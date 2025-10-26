@@ -35,7 +35,9 @@ CHAR        \'([^\'\\]|\\.)\'
 "imprimir"              { return 'TK_imprimir'}
 "si"                    { return 'TK_if'      }
 "o"                     { return 'TK_else'    }
+"de lo contrario"       { return 'TK_deLoContrario'}
 "para"                  { return 'TK_para'    }
+"mientras"              { return 'TK_mientras'}
 "funcion"               { return 'TK_funcion' }
 "retornar"              { return 'TK_retornar'}
 "ejecutar"              { return 'TK_ejecutar'}
@@ -104,6 +106,7 @@ CHAR        \'([^\'\\]|\\.)\'
     const { Imprimir } = require('../Clases/Instrucciones/Imprimir');
     const { Si } = require('../Clases/Instrucciones/Si');
     const { Funcion } = require('../Clases/Instrucciones/Funcion');
+    const { Mientras } = require('../Clases/Instrucciones/Mientras');
     const { Para } = require('../Clases/Instrucciones/Para');
     const { Incremento } = require('../Clases/Instrucciones/Incremento');
     const { Decremento } = require('../Clases/Instrucciones/Decremento');
@@ -145,8 +148,9 @@ INSTRUCCION :
             REASIGNACION TK_puntoComa   {$$ = $1} |
             REASIGNACION_VECTOR TK_puntoComa {$$ = $1} |
             IMPRIMIR TK_puntoComa       {$$ = $1} |
-            INCREMENTO_DECREMENTO       {$$ = $1} |
+            INCREMENTO_DECREMENTO_FIN   {$$ = $1} |
             CONDICIONAL_SI              {$$ = $1} |
+            CICLO_MIENTRAS              {$$ = $1} |
             CICLO_PARA                  {$$ = $1} |
             FUNCION                     {$$ = $1} |
             RETORNAR TK_puntoComa       {$$ = $1} |
@@ -183,8 +187,8 @@ DECLARACION_VECTOR :
         {
             // Ejemplo: entero[] vector1 = vector entero[3];
             $$ = new DeclaracionVector(@1.first_line, @1.first_column, $4, $1, null, 1, $9);
-        }
-        |
+        } |
+
         // Tipo 1: vector declarado con tamaño (2D)
         TIPO TK_corcheteAbre TK_corcheteCierra TK_corcheteAbre TK_corcheteCierra 
         TK_id TK_asignacion TK_vector TIPO 
@@ -193,16 +197,16 @@ DECLARACION_VECTOR :
         {
             // Ejemplo: caracter[][] vector2 = vector caracter[2][2];
             $$ = new DeclaracionVector(@1.first_line, @1.first_column, $6, $1, null, 2, [$11, $15]);
-        }
-        |
+        } |
+
         // Tipo 2: vector con lista de valores (1D)
         TIPO TK_corcheteAbre TK_corcheteCierra TK_id TK_asignacion 
         TK_corcheteAbre LISTA_EXPRESIONES TK_corcheteCierra TK_puntoComa
         {
             // Ejemplo: cadena[] vector3 = ["Hola", "Mundo"];
             $$ = new DeclaracionVector(@1.first_line, @1.first_column, $4, $1, $7, 1, null);
-        }
-        |
+        } |
+
         // Tipo 2: vector con lista de listas (2D)
         TIPO TK_corcheteAbre TK_corcheteCierra TK_corcheteAbre TK_corcheteCierra 
         TK_id TK_asignacion TK_corcheteAbre LISTA_LISTAS_EXPRESIONES TK_corcheteCierra TK_puntoComa
@@ -215,28 +219,71 @@ REASIGNACION : TK_id TK_asignacion EXPRESION {$$ = new Reasignacion(@1.first_lin
 
 REASIGNACION_VECTOR :
       // Vector unidimensional: vector[0] = valor;
-      TK_id TK_corcheteAbre EXPRESION TK_corcheteCierra
-        TK_asignacion EXPRESION
-        { $$ = new ReasignacionVector(@1.first_line, @1.first_column, $1, [$3], $6); }
-    |
+        TK_id TK_corcheteAbre EXPRESION TK_corcheteCierra
+        TK_asignacion EXPRESION { $$ = new ReasignacionVector(@1.first_line, @1.first_column, $1, [$3], $6); } |
+
       // Vector bidimensional: vector[1][0] = valor;
-      TK_id TK_corcheteAbre EXPRESION TK_corcheteCierra
+        TK_id TK_corcheteAbre EXPRESION TK_corcheteCierra
         TK_corcheteAbre EXPRESION TK_corcheteCierra
-        TK_asignacion EXPRESION
-        { $$ = new ReasignacionVector(@1.first_line, @1.first_column, $1, [$3, $6], $9); };
+        TK_asignacion EXPRESION { $$ = new ReasignacionVector(@1.first_line, @1.first_column, $1, [$3, $6], $9); };
 
 IMPRIMIR :
             TK_imprimir EXPRESION {$$ = new Imprimir(@1.first_line, @1.first_column, $2)} ;
 
 // Instrucciones
 // === CONDICIONAL SI ===
-CONDICIONAL_SI : TK_if TK_parAbre EXPRESION TK_parCierra TK_llaveAbre INSTRUCCIONES TK_llaveCierra {$$ = new Si(@1.first_line, @1.first_column, $3, $6)} ;
+CONDICIONAL_SI :
+        TK_if TK_parAbre EXPRESION TK_parCierra TK_llaveAbre INSTRUCCIONES TK_llaveCierra ELSE_IFS ELSE_FINAL
+        {
+            // Crear el bloque principal
+            let siInst = new Si(@1.first_line, @1.first_column, $3, $6);
 
-// === CICLO PARA ===
-CICLO_PARA : TK_para TK_parAbre REASIGNACION TK_puntoComa EXPRESION TK_puntoComa EXPRESION TK_parCierra TK_llaveAbre INSTRUCCIONES TK_llaveCierra ;
+            // Agregar todos los else if
+            if ($8) {
+                for (let ei of $8) {
+                    siInst.agregarElseIf(ei.condicion, ei.instrucciones);
+                }
+            }
+
+            // Agregar else final si existe
+            if ($9) {
+                siInst.agregarElse($9);
+            }
+
+            $$ = siInst;
+        } ;
+
+ELSE_IFS :
+        /* vacío */ { $$ = []; } | 
+        ELSE_IFS ELSE_IF { $1.push($2); $$ = $1; } ;
+
+ELSE_IF :
+        TK_else TK_if TK_parAbre EXPRESION TK_parCierra TK_llaveAbre INSTRUCCIONES TK_llaveCierra
+        { $$ = { condicion: $4, instrucciones: $7 }; } ;
+
+ELSE_FINAL :
+        /* vacío */ { $$ = null; } |
+        TK_deLoContrario TK_llaveAbre INSTRUCCIONES TK_llaveCierra
+        { $$ = $3; } ;
+
+// === CICLO ===
+
+CICLO_MIENTRAS : 
+        TK_mientras TK_parAbre EXPRESION TK_parCierra TK_llaveAbre INSTRUCCIONES TK_llaveCierra
+        { // Crear la instrucción Mientras con línea, columna, condición e instrucciones
+        $$ = new Mientras(@1.first_line, @1.first_column, $3, $6); } ;
+
+ACTUALIZACION_FOR :
+        REASIGNACION |   
+        INCREMENTO_DECREMENTO_FOR ;
+
+CICLO_PARA : 
+        TK_para TK_parAbre REASIGNACION TK_puntoComa EXPRESION TK_puntoComa ACTUALIZACION_FOR TK_parCierra TK_llaveAbre INSTRUCCIONES TK_llaveCierra
+        { $$ = new Para(@1.first_line, @1.first_column, $3, $5, $7, $10); } ;
 
 // === Funciones ===
-FUNCION : TK_funcion TIPO TK_id TK_parAbre TK_parCierra TK_llaveAbre INSTRUCCIONES TK_llaveCierra {$$ = new Funcion(@1.first_line, @1.first_column, $3, $2, $7)} ;
+FUNCION : 
+            TK_funcion TIPO TK_id TK_parAbre TK_parCierra TK_llaveAbre INSTRUCCIONES TK_llaveCierra {$$ = new Funcion(@1.first_line, @1.first_column, $3, $2, $7)} ;
 
 // Expresiones
 EXPRESION : 
@@ -293,9 +340,13 @@ LOGICOS :
             EXPRESION TK_or EXPRESION  {$$ = new Logico(@1.first_line, @1.first_column, $1, $2, $3)}|
             TK_not EXPRESION           {$$ = new Logico(@1.first_line, @1.first_column, undefined, $1, $2)};
 
-INCREMENTO_DECREMENTO :
-            TK_id TK_incremento TK_puntoComa { $$ = new Incremento(@1.first_line, @1.first_column, $1); } |
-            TK_id TK_decremento TK_puntoComa { $$ = new Decremento(@1.first_line, @1.first_column, $1); } ;
+INCREMENTO_DECREMENTO_FIN :
+        TK_id TK_incremento TK_puntoComa { $$ = new Incremento(@1.first_line, @1.first_column, $1); } |
+        TK_id TK_decremento TK_puntoComa { $$ = new Decremento(@1.first_line, @1.first_column, $1); } ;
+
+INCREMENTO_DECREMENTO_FOR :
+        TK_id TK_incremento { $$ = new Incremento(@1.first_line, @1.first_column, $1); } |
+        TK_id TK_decremento { $$ = new Decremento(@1.first_line, @1.first_column, $1); } ;
 
 CASTEO :
             TK_parAbre TIPO TK_parCierra EXPRESION { $$ = new Casteo(@1.first_line, @1.first_column, $2, $4); } ;
