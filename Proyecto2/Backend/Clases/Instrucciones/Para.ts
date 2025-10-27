@@ -8,32 +8,48 @@ export class Para extends Instruccion {
     constructor(
         linea: number,
         columna: number,
-        public inicio: Instruccion,     // Debe ser una asignación o declaración
+        public inicio: Instruccion,
         public condicion: Expresion,
-        public incremento: Instruccion, // Debe ser incremento/decremento
+        public incremento: Instruccion,
         public instrucciones: Instruccion[]
     ) {
         super(linea, columna, tipoInstruccion.PARA);
     }
 
     public ejecutar(entorno: Entorno) {
-        // Crear un entorno local para el ciclo
-        let entornoLocal = new Entorno(entorno, entorno.nombre + "_PARA");
+        const entornoLocal = new Entorno(entorno, entorno.nombre + "_PARA");
 
-        // Ejecutar la inicialización (i = 0;)
+        // Inicialización (ej. i = 0)
         this.inicio.ejecutar(entornoLocal);
 
-        // Ciclo mientras la condición sea verdadera
         while (true) {
-            let condicion = this.condicion.ejecutar(entornoLocal);
-            if (!condicion || !condicion.valor) break; // Detener si condición es falsa
+            const condicion = this.condicion.ejecutar(entornoLocal);
+            if (!condicion || !condicion.valor) break;
 
-            // Ejecutar bloque de instrucciones del ciclo
-            let bloque = new Bloque(this.linea, this.columna, this.instrucciones);
-            bloque.ejecutar(entornoLocal);
+            // Crear bloque
+            const bloque = new Bloque(this.linea, this.columna, this.instrucciones);
+            const resultado = bloque.ejecutar(entornoLocal);
 
-            // Ejecutar incremento/decremento
+            // Verificar señales especiales
+            if (resultado !== null && resultado !== undefined) {
+                // 🧱 detener → salir del ciclo
+                if (resultado.detener === true) break;
+
+                // 🔁 continuar → ejecutar incremento y seguir
+                if (resultado.continuar === true) {
+                    this.incremento.ejecutar(entornoLocal);
+                    // Reiniciar iteración sin cortar el ciclo
+                    continue;
+                }
+
+                // return u otras señales se propagan
+                return resultado;
+            }
+
+            // 🚀 ejecutar incremento normal
             this.incremento.ejecutar(entornoLocal);
         }
+
+        return null;
     }
 }

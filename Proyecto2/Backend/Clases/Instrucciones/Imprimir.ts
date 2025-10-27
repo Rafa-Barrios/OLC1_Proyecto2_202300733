@@ -3,13 +3,20 @@ import { Instruccion } from "../Abstractas/Instruccion";
 import { Entorno } from "../Entorno/Entorno";
 import { tipoInstruccion } from "../Utilidades/TipoInstruccion";
 
-export class Imprimir extends Instruccion{
+export class Imprimir extends Instruccion {
     constructor(linea: number, columna: number, private expresion: Expresion) {
-        super(linea, columna, tipoInstruccion.IMPRIMIR)
+        super(linea, columna, tipoInstruccion.IMPRIMIR);
     }
 
     public ejecutar(entorno: Entorno) {
         let valor = this.expresion.ejecutar(entorno);
-        entorno.setPrint(valor.valor);
+
+        // Si es un objeto con { valor }, imprimimos su valor interno
+        if (valor && typeof valor === "object" && "valor" in valor) {
+            entorno.setPrint(valor.valor);
+        } else {
+            // Si es un valor directo (como número, cadena, booleano)
+            entorno.setPrint(valor);
+        }
     }
 }

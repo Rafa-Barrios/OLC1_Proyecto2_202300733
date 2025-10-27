@@ -15,22 +15,35 @@ export class HacerHastaQue extends Instruccion {
     }
 
     public ejecutar(entorno: Entorno) {
-        // Crear un entorno local para el ciclo
         const entornoLocal = new Entorno(entorno, entorno.nombre + "_HACER_HASTA_QUE");
 
-        // Ejecutar el bloque al menos una vez
         do {
             const bloque = new Bloque(this.linea, this.columna, this.instrucciones);
-            bloque.ejecutar(entornoLocal);
+            const resultado = bloque.ejecutar(entornoLocal);
 
-            // Evaluar la condición
+            if (resultado !== null && resultado !== undefined) {
+                // Manejar 'detener'
+                if (resultado.detener === true) break;
+
+                // Manejar 'continuar': saltar al siguiente ciclo
+                if (resultado.continuar === true) {
+                    continue;
+                }
+
+                // Propagar otras señales (como return)
+                return resultado;
+            }
+
             const condicionResultado = this.condicion.ejecutar(entornoLocal);
 
-            // Si la condición es verdadera, se detiene el ciclo
-            if (condicionResultado.valor === true) {
+            if (condicionResultado.tipo !== undefined && condicionResultado.tipo !== null &&
+                condicionResultado.valor === true) {
                 break;
             }
 
-        } while (true); // Se detiene dentro del ciclo cuando la condición sea verdadera
+        } while (true);
+
+        return null;
     }
 }
+

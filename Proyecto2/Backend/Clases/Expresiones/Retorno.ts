@@ -8,11 +8,29 @@ export class Retorno extends Expresion {
         super(linea, columna, TipoExpresion.RETORNO);
     }
 
+    /**
+     * Ejecuta el retorno dentro de una función.
+     * Devuelve un objeto { valor, tipo } para que LlamadaFuncion lo procese.
+     */
     public ejecutar(entorno: Entorno): TipoRetorno {
         if (this.expresion) {
-            const valor = this.expresion.ejecutar(entorno);
-            return { valor: valor.valor, tipo: valor.tipo};
+            const resultado = this.expresion.ejecutar(entorno);
+
+            // Si la expresión ya devuelve { valor, tipo }, lo respetamos
+            if (resultado && typeof resultado === "object" && "valor" in resultado && "tipo" in resultado) {
+                return { valor: resultado.valor, tipo: resultado.tipo };
+            }
+
+            // Si devuelve un valor primitivo, inferimos el tipo
+            let tipoInferido = Tipo.NULL;
+            if (typeof resultado === "number") tipoInferido = Number.isInteger(resultado) ? Tipo.ENTERO : Tipo.DOUBLE;
+            else if (typeof resultado === "string") tipoInferido = Tipo.CADENA;
+            else if (typeof resultado === "boolean") tipoInferido = Tipo.BOOLEANO;
+
+            return { valor: resultado, tipo: tipoInferido };
         }
+
+        // Retorno sin expresión
         return { valor: null, tipo: Tipo.NULL };
     }
 }

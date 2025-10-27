@@ -11,5 +11,8 @@ export enum tipoInstruccion {
     INCREMENTO,
     DECREMENTO,
     MIENTRAS,
-    HACER_HASTA_QUE
+    HACER_HASTA_QUE,
+    DETENER,
+    CONTINUAR,
+    PROCEDIMIENTO
 }

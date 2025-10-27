@@ -23,28 +23,31 @@ CHAR        \'([^\'\\]|\\.)\'
 \n                      {}
 {UNUSED}                {}
 // Reservadas
-"entero"                { return 'TK_entero'  }
-"double"                { return 'TK_double'  }
-"boolean"               { return 'TK_boolean' }
-"true"                  { return 'TK_true'    }
-"false"                 { return 'TK_false'   } 
-"cadena"                { return 'TK_cadena'  }
-"caracter"              { return 'TK_caracter'}
-"con"                   { return 'TK_con'     }
-"valor"                 { return 'TK_valor'   }
-"imprimir"              { return 'TK_imprimir'}
-"si"                    { return 'TK_if'      }
-"o"                     { return 'TK_else'    }
+"entero"                { return 'TK_entero'   }
+"double"                { return 'TK_double'   }
+"boolean"               { return 'TK_boolean'  }
+"true"                  { return 'TK_true'     }
+"false"                 { return 'TK_false'    } 
+"cadena"                { return 'TK_cadena'   }
+"caracter"              { return 'TK_caracter' }
+"con"                   { return 'TK_con'      }
+"valor"                 { return 'TK_valor'    }
+"imprimir"              { return 'TK_imprimir' }
+"si"                    { return 'TK_if'       }
+"o"                     { return 'TK_else'     }
 "de lo contrario"       { return 'TK_deLoContrario'}
-"para"                  { return 'TK_para'    }
-"mientras"              { return 'TK_mientras'}
-"hacer"                 { return 'TK_hacer'   }
-"hasta que"             { return 'TK_hastaQue'}
-"funcion"               { return 'TK_funcion' }
-"retornar"              { return 'TK_retornar'}
-"ejecutar"              { return 'TK_ejecutar'}
-"vector"                { return 'TK_vector'  }
-"de"                    { return 'TK_de'      }
+"para"                  { return 'TK_para'     }
+"mientras"              { return 'TK_mientras' }
+"hacer"                 { return 'TK_hacer'    }
+"hasta que"             { return 'TK_hastaQue' }
+"funcion"               { return 'TK_funcion'  }
+"retornar"              { return 'TK_retornar' }
+"detener"               { return 'TK_detener'  }
+"continuar"             { return 'TK_continuar'}
+"ejecutar"              { return 'TK_ejecutar' }
+"vector"                { return 'TK_vector'   }
+"de"                    { return 'TK_de'       }
+"procedimiento"         { return 'TK_procedimiento'}
 // Comentarios
 "//".*                                 {/* Ignorar comentario de una línea */}
 "/*"([^*]|\*+[^*/])*\*+"/"             {/* Ignorar comentario multilínea */}
@@ -116,7 +119,9 @@ CHAR        \'([^\'\\]|\\.)\'
     const { AccesoVector } = require('../Clases/Expresiones/AccesoVector');
     const { DeclaracionVector } = require('../Clases/Instrucciones/DeclaracionVector');
     const { ReasignacionVector } = require('../Clases/Instrucciones/ReasignacionVector');
-
+    const { Detener } = require('../Clases/Instrucciones/Detener');
+    const { Continuar } = require('../Clases/Instrucciones/Continuar');
+    const { Procedimiento } = require('../Clases/Instrucciones/Procedimiento');
 
 %}
 
@@ -151,14 +156,18 @@ INSTRUCCION :
             REASIGNACION TK_puntoComa   {$$ = $1} |
             REASIGNACION_VECTOR TK_puntoComa {$$ = $1} |
             IMPRIMIR TK_puntoComa       {$$ = $1} |
+            TK_detener TK_puntoComa     { $$ = new Detener(@1.first_line, @1.first_column); } |
+            TK_continuar TK_puntoComa { $$ = new Continuar(@1.first_line, @1.first_column); } |
+            LLAMADA_FUNCION TK_puntoComa{$$ = $1} |
             INCREMENTO_DECREMENTO_FIN   {$$ = $1} |
             CONDICIONAL_SI              {$$ = $1} |
             CICLO_MIENTRAS              {$$ = $1} |
             CICLO_PARA                  {$$ = $1} |
             CICLO_HACER_HASTA_QUE       {$$ = $1} |
-            FUNCION                     {$$ = $1} |
+            FUNCION_CON_PARAM           {$$ = $1} |
             RETORNAR TK_puntoComa       {$$ = $1} |
             DECLARACION_VECTOR          {$$ = $1} |
+            PROCEDIMIENTO_DECLARACION   {$$ = $1;}|
             error           {errores.push(new Error(this._$.first_line, this._$.first_column + 1, TipoError.SINTACTICO, `No se esperaba «${yytext}»`))} ;
 
 LISTA_IDS : 
@@ -289,10 +298,36 @@ CICLO_HACER_HASTA_QUE :
         TK_hacer TK_llaveAbre INSTRUCCIONES TK_llaveCierra TK_hastaQue TK_parAbre EXPRESION TK_parCierra
         { $$ = new HacerHastaQue(@1.first_line, @1.first_column, $3, $7); };
 
+// Función con parámetros opcionales
+FUNCION_CON_PARAM :
+        TK_funcion TIPO TK_id TK_parAbre LISTA_PARAMETROS_OPCIONAL TK_parCierra TK_llaveAbre INSTRUCCIONES TK_llaveCierra
+        { $$ = new Funcion(@1.first_line, @1.first_column, $3, $2, $5 || [], $8); } ;
 
-// === Funciones ===
-FUNCION : 
-            TK_funcion TIPO TK_id TK_parAbre TK_parCierra TK_llaveAbre INSTRUCCIONES TK_llaveCierra {$$ = new Funcion(@1.first_line, @1.first_column, $3, $2, $7)} ;
+// Procedimiento con paréntesis (posiblemente vacíos)
+PROCEDIMIENTO_DECLARACION_CON_PAR :
+        TK_procedimiento TK_id TK_parAbre LISTA_PARAMETROS_OPCIONAL TK_parCierra TK_llaveAbre INSTRUCCIONES TK_llaveCierra
+        { $$ = new Procedimiento( @1.first_line, @1.first_column, $2, $4 || [], $7 ); };
+
+// Procedimiento sin paréntesis
+PROCEDIMIENTO_DECLARACION_SIN_PAR :
+        TK_procedimiento TK_id TK_llaveAbre INSTRUCCIONES TK_llaveCierra
+        { $$ = new Procedimiento( @1.first_line, @1.first_column, $2, [], $4 ); };
+
+PROCEDIMIENTO_DECLARACION :
+        PROCEDIMIENTO_DECLARACION_CON_PAR | 
+        PROCEDIMIENTO_DECLARACION_SIN_PAR ;
+
+LISTA_PARAMETROS_OPCIONAL :
+        /* vacío */  { $$ = []; } | 
+        LISTA_PARAMETROS { $$ = $1; } ;
+
+LISTA_PARAMETROS :
+        PARAMETRO { $$ = [$1]; } | 
+        LISTA_PARAMETROS TK_coma PARAMETRO { $1.push($3); $$ = $1; } ;
+
+PARAMETRO :
+        TIPO TK_id TK_asignacion EXPRESION { $$ = { nombre: $2, tipo: $1, valor: $4 }; } |
+        TIPO TK_id                          { $$ = { nombre: $2, tipo: $1, valor: null }; } ;
 
 // Expresiones
 EXPRESION : 
@@ -302,6 +337,8 @@ EXPRESION :
             ARITMETICOS  {$$ = $1} |
             CASTEO       {$$ = $1} |
             LLAMADA_FUNCION           {$$ = $1} |
+            TK_id TK_parAbre TK_parCierra { $$ = new LlamadaFuncion(@1.first_line,@1.first_column,$1,[]); } |
+            TK_id TK_parAbre LISTA_EXPRESIONES TK_parCierra { $$ = new LlamadaFuncion(@1.first_line,@1.first_column,$1,$3); } |
             TK_id      {$$ = new AccesoID(@1.first_line, @1.first_column, $1              )} |
             TK_int     {$$ = new Primitivo(@1.first_line, @1.first_column, $1, Tipo.ENTERO)} |
             TK_decimal {$$ = new Primitivo(@1.first_line, @1.first_column, $1, Tipo.DOUBLE)} |
@@ -364,7 +401,11 @@ RETORNAR :
             TK_retornar EXPRESION {$$ = new Retorno(@1.first_line, @1.first_column, $2)} ;
 
 LLAMADA_FUNCION : 
-            TK_ejecutar TK_id TK_parAbre TK_parCierra {$$ = new LlamadaFuncion(@1.first_line, @1.first_column, $2, undefined)} ;
+            TK_ejecutar TK_id TK_parAbre TK_parCierra
+            { $$ = new LlamadaFuncion(@1.first_line, @1.first_column, $2, []); } |
+
+            TK_ejecutar TK_id TK_parAbre LISTA_EXPRESIONES TK_parCierra
+            { $$ = new LlamadaFuncion(@1.first_line, @1.first_column, $2, $4); } ;
 
 TIPO : 
             TK_entero {$$ = Tipo.ENTERO} | 

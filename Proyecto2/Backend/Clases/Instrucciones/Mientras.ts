@@ -19,13 +19,11 @@ export class Mientras extends Instruccion {
     }
 
     public ejecutar(entorno: Entorno) {
-        // Creamos un nuevo entorno local para el ciclo
         const entornoLocal = new Entorno(entorno, entorno.nombre + "_MIENTRAS");
 
         while (true) {
             const resultadoCondicion = this.condicion.ejecutar(entornoLocal);
 
-            // Verificar tipo booleano
             if (resultadoCondicion.tipo !== Tipo.BOOLEANO) {
                 console.error(
                     `Error semántico: la condición del ciclo 'mientras' no es booleana (${this.linea}:${this.columna})`
@@ -33,15 +31,19 @@ export class Mientras extends Instruccion {
                 break;
             }
 
-            // Evaluar la condición
             if (!resultadoCondicion.valor) break;
 
-            // Ejecutar el bloque interno
             const resultado = this.bloque.ejecutar(entornoLocal);
 
-            // Si alguna instrucción retorna algo (return, break, etc.), lo propagamos
             if (resultado !== null && resultado !== undefined) {
-                // Si más adelante agregas soporte a break/continue/return, puedes manejarlo aquí
+
+                // Manejo de 'detener'
+                if (resultado.detener === true) break;
+
+                // Manejo de 'continuar': saltar a la siguiente iteración
+                if (resultado.continuar === true) continue;
+
+                // Propagar cualquier otra instrucción especial (como return)
                 return resultado;
             }
         }
